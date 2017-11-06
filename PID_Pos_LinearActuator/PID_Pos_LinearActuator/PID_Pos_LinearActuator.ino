@@ -9,6 +9,7 @@ const int SampleTime = 1;
 const int minPWM = -255;
 const int maxPWM = 255;
 long temp;
+int incomingByte = 0; //For incmoing serial data
 
 PID myPID(&Input, &Output, &Setpoint, kp, ki, kd, DIRECT);
 
@@ -16,7 +17,7 @@ void setup()
 {
 	TCCR1B = TCCR1B & 0b11111000 | 1;	//	Set 31KHz PWM to prevent motor noise
 	Input = analogRead(A0);
-	Setpoint = 500;
+	Setpoint = 250;
 
 	myPID.SetMode(AUTOMATIC);
 	myPID.SetSampleTime(SampleTime);
@@ -25,14 +26,23 @@ void setup()
 
 	pinMode(pull, OUTPUT);	//When HIGH the actuator push
 	pinMode(push, OUTPUT);	//When HIGH the actuatot pull
-	Serial.begin(9600);		//Serial initialization
+	Serial.begin(115200);	//Serial initialization
 }
 
 void loop()
 {
-	//setpoint = 760;
+	if (Serial.available() > 0) 
+	{
+		// read the incoming byte:
+		incomingByte = Serial.parseInt();
+
+		// say what you got:
+		Serial.print("I received: ");
+		Serial.println(incomingByte, DEC);
+	}
+	Setpoint = incomingByte;
 	Input = analogRead(A0);	// data from encoder
-	Serial.println(Input);	// monitor motor position
+	//Serial.println(Input);	// monitor motor position
 	myPID.Compute();	// calculate new output
 	pwmOut(Output);	// drive L298N H-Bridge module
 }
